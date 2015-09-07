@@ -185,10 +185,13 @@ class TorTraceCollector(object):
             self.IS_NORM = True
         self.round_no = round_no
         self.home_path = os.getcwd()
-        self.trace_dir = os.path.join(TRACE_ROOT_DIR, self.pt)
+        self.trace_dir = os.path.join(TRACE_ROOT_DIR, self.round_no)
         if not os.path.exists(self.trace_dir):
             os.mkdir(self.trace_dir)
-        self.netlog_dir = os.path.join(self.home_path, "netlogs")
+        self.trace_dir = os.path.join(self.trace_dir, self.pt)
+        if not os.path.exists(self.trace_dir):
+            os.mkdir(self.trace_dir)
+
         self.profile_dir = os.path.join(self.home_path, "profile.default")
         self.profile = self.get_profile()
         self.driver = None
@@ -201,7 +204,7 @@ class TorTraceCollector(object):
         profile = FirefoxProfile(self.profile_dir)
         profile.set_preference('startup.homepage_welcome_url', "about:blank")
         profile.set_preference('browser.startup.homepage', "about:blank")
-        profile.set_preference('extensions.firebug.netexport.defaultLogDir', self.netlog_dir)
+        # profile.set_preference('extensions.firebug.netexport.defaultLogDir', self.netlog_dir)
 
         #set socks proxy
         profile.set_preference( "network.proxy.type", 1 )
@@ -329,7 +332,7 @@ def get_finished(pt):
     nos = [int(v.split("_")[0]) for v in nos]
     return nos
 
-def run_with(domain_list, pt, start, end):
+def run_with(domain_list, pt, start, end, round_no):
     turls = open(domain_list).readlines()
     urls = {}
 
@@ -345,7 +348,7 @@ def run_with(domain_list, pt, start, end):
         killall()
         clear_dns_cache()
 
-        tc = TorTraceCollector(pt, 1)
+        tc = TorTraceCollector(pt, round_no)
         tc.driver_init()
         u = urls[no]
         url = "http://www." + u
@@ -378,7 +381,7 @@ def test():
     for pt in ["norm", "obfs3", "obfs4", "fte", "meek-google", "meek-amazon"]:
     # for pt in ["norm"]:
     # pt = "meek-amazon"
-        run_with("top-1m.csv", pt, 1, 5)
+        run_with("top-1m.csv", pt, 1, 5, 0)
 
 def pt_type_check(v):
     if v not in ["norm", "obfs3", "obfs4", "fte", "meek-google", "meek-amazon"]:
@@ -392,9 +395,10 @@ def main():
     parser.add_argument("-d", "--domain", help="path of the input domain list", required=True)
     parser.add_argument("-s", "--start", type=int, help="start ID", required=True)
     parser.add_argument("-e", "--end", type=int, help="end ID", required=True)
+    parser.add_argument("-r", "--round", type=int, help="round number", required=True)
     args = parser.parse_args()
     # print args.type, args.domain, args.start, args.end
-    run_with(args.type, args.domain, args.start, args.end)
+    run_with(args.type, args.domain, args.start, args.end, args.round)
 
 if __name__ == '__main__':
     main()
