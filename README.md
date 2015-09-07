@@ -18,7 +18,13 @@ Use the framework to collect Tor traces
 ----------------
 1. Download the source code of the newest Tor Browser Bundle 
 from https://www.torproject.org/projects/torbrowser.html.en, and 
-unzip it. 
+unzip it. The resulting directory should be "path/tor-browser_en-US".
 2. Download the Alexa Top 1M domain list from http://s3.amazonaws.com/alexa-static/top-1m.csv.zip, 
-or create your own file that contains target domains. The format of the file must be "unique_id, domain_name".   
-3. Put tor_trace_collection.py and   
+or create your own file that contains target domains. The format of the file must be "unique_ID, domain_name". 
+The unique IDs should be numeric values.  
+3. Follow the instructions in https://github.com/Yawning/obfs4 to build 
+obfsproxy4, change the output to obfs4proxy.bin (or obfs4proxy4.exe) and 
+put it in the "path/tor-browser_en-US/Browser/TorBrowser/Tor/PluggableTransports/"
+4. Put tor_trace_collection.py and conf.py in the "path/tor-browser_en-US/Browser", and configure the conf.py. 
+5. Run "python tor_trace_collection.py -h" to see how to use it. 
+

@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import subprocess
 import signal
 import platform
@@ -328,8 +329,8 @@ def get_finished(pt):
     nos = [int(v.split("_")[0]) for v in nos]
     return nos
 
-def run_with(pt, start, end):
-    turls = open(DOMAIN_LIST).readlines()
+def run_with(domain_list, pt, start, end):
+    turls = open(domain_list).readlines()
     urls = {}
 
     for v in turls:
@@ -373,9 +374,28 @@ def run_with(pt, start, end):
         except:
         	pass
 
-
-if __name__ == '__main__':
+def test():
     for pt in ["norm", "obfs3", "obfs4", "fte", "meek-google", "meek-amazon"]:
     # for pt in ["norm"]:
     # pt = "meek-amazon"
-        run_with(pt, 1, 5)
+        run_with("top-1m.csv", pt, 1, 5)
+
+def pt_type_check(v):
+    if v not in ["norm", "obfs3", "obfs4", "fte", "meek-google", "meek-amazon"]:
+        raise argparse.ArgumentTypeError("Unknown PTs")
+    return v 
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--type", type=pt_type_check, help="name of the support Tor Pluggable Transports, the options are \
+        'obfs3', 'obfs4', 'fte', 'meek-google', 'meek-amazon' and 'norm'", required=True)
+    parser.add_argument("-d", "--domain", help="path of the input domain list", required=True)
+    parser.add_argument("-s", "--start", type=int, help="start ID", required=True)
+    parser.add_argument("-e", "--end", type=int, help="end ID", required=True)
+    args = parser.parse_args()
+    # print args.type, args.domain, args.start, args.end
+    run_with(args.type, args.domain, args.start, args.end)
+
+if __name__ == '__main__':
+    main()
+
