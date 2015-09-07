@@ -28,5 +28,8 @@ FLAG_ACK = 16
 FLAG_PUSH_ACK = 24
 MISSING_ITEM = -1
 
-
+def entropy(s):
+    p, lns = Counter(s), float(len(s))
+    lns = float(256)
+    return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
 

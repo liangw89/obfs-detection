@@ -250,7 +250,6 @@ class TorTraceCollector(object):
         if self.pt == "meek-amazon":
             config = MeekATorrc()
         if self.pt == "meek-google":
-            print "init"
             config = MeekGTorrc()
         if self.pt == "obfs4":
             config = Obfs4Torrc()
