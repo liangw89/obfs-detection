@@ -329,7 +329,7 @@ def get_finished(pt):
     return nos
 
 def run_with(pt, start, end):
-    turls = open("top-1m.csv").readlines()
+    turls = open(DOMAIN_LIST).readlines()
     urls = {}
 
     for v in turls:

@@ -10,7 +10,7 @@ TRACE_ROOT_DIR = "./trace_test"
 CSV_ROOT_DIR = "./csv_test"
 CSV_ML_RES = "test.csv"
 MODEL_DIR = "./models"
-
+DOMAIN_LIST = "top-1m.csv"
 SIP = "10.0.2.15"
 
 TBB_DIR = "./"
