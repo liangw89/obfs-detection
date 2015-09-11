@@ -12,7 +12,7 @@ from conf import *
 IS_CAMPUS = True
 
 class PktMeta(object):
-    """docstring for PktMeta"""
+    """the structure of a trace"""
     def __init__(self):
         super(PktMeta, self).__init__()
         self.direction = -1
@@ -24,10 +24,18 @@ class PktMeta(object):
         self.ssl_fl = 0
 
 def entropy(s):
+    """
+    calcuate the entropy of a string
+    :param str s: a string
+    """
     p, lns = Counter(s), float(len(s))
     return -sum( count/lns * math.log(count/lns, 2) for count in p.values())
 
 def get_traget_flow(fin):
+    """
+    select the flow with the most number of packets in a pcap
+    :param str fin: the path of the input trace 
+    """
     select_row = None
 
     cmd = "tshark -n -q -z conv,tcp -r %s" % (fin)
@@ -57,6 +65,13 @@ def get_traget_flow(fin):
 
 
 def generate_trace(fin, cond):
+    """
+    extract basic info from each of packets of selected flow in a pcap, and 
+    store the PktMeta instances into a cPickle file. We call the resulting 
+    list of PktMeta instances "trace"
+    :param str fin: path of the input pcap
+    :param str cond: the 4 tuple of the flow selected in the input pcap  
+    """
     SRC_IP = cond[0]
     SRC_PORT = cond[1]
     DST_IP = cond[2]
@@ -112,6 +127,14 @@ def generate_trace(fin, cond):
 
 
 def load_trace(fin, trace_out_dir, clean_fl=False):
+    """
+    find if the trace of a flow exists; if exists, load 
+    the trace; otherwise generate the trace.
+    :param str fin: the path of the input pcap
+    :param str trace_out_dir: the directory for storing traces
+    :param boolean clean_fl: if this flag is set to True, then 
+    the script ignore the existing trace and generate a new trace.
+    """
     fname = os.path.basename(fin)
     fout = os.path.join(trace_out_dir, "%s_cached.db" % fname)
     if os.path.exists(fout) and not clean_fl:
@@ -127,6 +150,11 @@ def load_trace(fin, trace_out_dir, clean_fl=False):
     return pkts
 
 def pkt_len_dist(trace, direction):
+    """
+    payload length distribution of the packets 
+    in a given direction; only return the top 5 
+    most seen pcap payload lengths.
+    """
     _size = []
     for p in trace:
         if direction == ALLSTREAM:
@@ -148,6 +176,11 @@ def pkt_len_dist(trace, direction):
     return zero_p, res
 
 def pkt_ssl_len_dist(trace, direction):
+    """
+    payload length distribution of ssl packets 
+    in a given direction; only return the top 3 
+    most seen pcap payload lengths.
+    """
     _size = []
     for p in trace:
         if p.ssl_fl == 0:
@@ -170,6 +203,10 @@ def pkt_ssl_len_dist(trace, direction):
     return round(len(_size) / float(trace[-1].ts), 2), res
 
 def pkt_payload_entropy_dist(trace, direction):
+    """
+    min/max/medain/mean entropies of all the packet payloads
+    in a given direction;
+    """
     _tmp = []
     for p in trace:
         if p.payload_len == 0:
@@ -185,6 +222,10 @@ def pkt_payload_entropy_dist(trace, direction):
     return [round(min(_tmp), 2), round(max(_tmp), 2), round(np.median(_tmp), 2), round(np.average(_tmp), 2)]
 
 def pkt_payload_ack_seq(trace, direction):
+    """
+    percentage of intervals between ACK packets in a given 
+    direction that falls in to a given range. 
+    """
     if direction == ALLSTREAM:
         return None
     _tmp = []
@@ -227,6 +268,11 @@ def pkt_interval_dist(trace):
 
 
 def get_all_features(trace, cls_label):
+    """
+    generate features for a given trace
+    :param list trace: a list of PktMeta instances. 
+    :param str cls_label: the cls of the input trace  
+    """
     res = []
     for direction in [UPSTREAM, DOWNSTREAM, ALLSTREAM]:
         # packet size dist
@@ -262,6 +308,10 @@ def get_all_features(trace, cls_label):
     return res
 
 def get_partial_trace_by_time(trace, time_window):
+    """
+    extract a portion of the input trace based on 
+    specified time window
+    """
     st = 0
     ed = trace[-1].ts
     if time_window >= ed:
@@ -277,6 +327,10 @@ def get_partial_trace_by_time(trace, time_window):
     return res
 
 def get_partial_trace_by_no(trace, no):
+    """
+    extract a portion of the input trace based on 
+    specified packet number
+    """
     _max = len(trace)
     if no >= _max:
         return trace
