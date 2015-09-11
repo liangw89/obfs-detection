@@ -347,6 +347,7 @@ def copy_dir_struct(in_dir, out_dir):
             os.mkdir(r)
 
 def generate_feature_csv(strategy, strategy_paras, cls_labels, setting_id, trail_no=0):
+    """generate csvs that storing the features extracted from traces"""
     func = None
     if strategy == "time":
         func = get_partial_trace_by_time
