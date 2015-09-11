@@ -25,8 +25,13 @@ IS_WINDOWS = platform.system().lower().startswith('windows')
 os.environ['LD_LIBRARY_PATH'] =  os.path.join(TBB_DIR, "TorBrowser", "Tor")
 TOR_DATA_DIRECTORY = os.path.join(TBB_DIR, 'TorBrowser', 'Data', 'Tor')
 TOR_PLUG_DIR = os.path.join(TBB_DIR, 'TorBrowser', 'Tor', 'PluggableTransports')
+TOR_TIMEOUT = 60
+PAGE_TIMEOUT = 60
 
 class BasicTorrc(dict):
+    """
+    A class represents the torcc file
+    """
     def __init__(self):
         self['AvoidDiskWrites'] = '1'
         self['Log'] = 'notice stdout'
@@ -43,13 +48,15 @@ class BasicTorrc(dict):
         self['UseBridges'] = '1'
 
 class FteTorrc(BasicTorrc):
+    """Configure FTE proxy"""
     def __init__(self):
         super(FteTorrc, self).__init__()
         # fteproxy configuration
         if IS_WINDOWS: prog = os.path.join(TOR_PLUG_DIR, 'fteproxy.exe')
         else: prog = os.path.join(TOR_PLUG_DIR, 'fteproxy.bin')
-
+        # the path and parameters of the executed pluggable transport
         self['ClientTransportPlugin'] = 'fte exec %s --managed' % (prog)
+        # change the proxy bridges
         self['Bridge'] = [
             'fte 50.7.176.114:80 2BD466989944867075E872310EBAD65BC88C8AEF',
             'fte 192.240.101.106:80 B629B0B607C8AC9349B5646C24E9D242184F5B6E',
@@ -62,6 +69,7 @@ class FteTorrc(BasicTorrc):
         ]     
 
 class Obfs3Torrc(BasicTorrc):
+    """Configure Obfs3 proxy"""
     def __init__(self):
         super(Obfs3Torrc, self).__init__()
      
@@ -79,7 +87,7 @@ class Obfs3Torrc(BasicTorrc):
         ]
 
 class Obfs4Torrc(BasicTorrc):
-
+    """Configure Obfs4 proxy"""
     def __init__(self):
         super(Obfs4Torrc, self).__init__()
 
@@ -95,6 +103,7 @@ class Obfs4Torrc(BasicTorrc):
         ]
 
 class MeekATorrc(BasicTorrc):
+    """Configure meek-amazon"""
     def __init__(self):
         super(MeekATorrc, self).__init__()
         if IS_WINDOWS:
@@ -112,6 +121,7 @@ class MeekATorrc(BasicTorrc):
         ]
 
 class MeekGTorrc(BasicTorrc):
+    """Configure meek-google"""
     def __init__(self):
         super(MeekGTorrc, self).__init__()
 
@@ -139,7 +149,8 @@ def execute(cmd):
     return os.system(cmd)
 
 
-def must_die(process_name):
+def kill_proc(process_name):
+    """kill a process"""
     if IS_WINDOWS:
         res = execute("taskkill /t /im %s" % process_name)
         if res != 128: # process not found
@@ -147,36 +158,50 @@ def must_die(process_name):
             res = execute("taskkill /f /t /im %s" % process_name)
         return res
     else:
-        execute("killall %s" % process_name)
+        execute("kill_all %s" % process_name)
 
-def killall():
+def kill_all():
+    """clean all processes"""
     if IS_WINDOWS:
         for i in ['tor.exe','terminateprocess-buffer.exe', 'meek-client-torbrowser.exe', 'firefox.exe', 'windump.exe', 'fteproxy.exe', 'obfsproxy.exe', 'meek-client.exe', 'obfs4proxy.exe']:
-            must_die(i)
+            kill_proc(i)
     else:
         for i in ['firefox', 'tor', 'Xvfb', 'tcpdump']:
-            must_die(i)
+            kill_proc(i)
 
-def killtor():
+def kill_tor():
+    """clean all processes related with Tor"""
     if IS_WINDOWS:
         for pt in ['tor.exe','terminateprocess-buffer.exe', 'meek-client-torbrowser.exe', 'fteproxy.exe', 'obfsproxy.exe', 'meek-client.exe', 'obfs4proxy.exe']:
-            must_die(pt)
+            kill_proc(pt)
     else:
         for pt in ["fteproxy.bin", "obfsproxy.bin", "obfs4proxy.bin", "meek-client", "meek-client-torbrowser"]:
             os.popen("pkill -f %s" % pt)
 
 def clear_dns_cache():
+    """
+    clear DNS cache to make sure the program will issue new DNS 
+    before each new connection in Windows. In Ubuntu the system 
+    will clear the cache by default. 
+    """
     if IS_WINDOWS:
         os.popen("ipconfig /flushdns")
     else:
         pass
 
 def random_sec():
+    """generate a random number within a range"""
+    # change to  5-15 in practice
     return random.randint(1, 3)
 
 
 class TorTraceCollector(object):
-    """docstring for TorTraceCollector"""
+    """
+    Collect the Tor PluggableTransport traces
+
+    :param str pt_name: the code of the PT
+    :param int round_no: an ID specified 
+    """
     def __init__(self, pt_name, round_no):
         super(TorTraceCollector, self).__init__()
         self.pt = pt_name
@@ -232,17 +257,20 @@ class TorTraceCollector(object):
         return profile
 
     def driver_init(self):
+        """open a selenium web browser"""
         if self.IS_NORM:
             self.driver = webdriver.Firefox()
         else:
             self.driver = webdriver.Firefox(firefox_profile=self.profile)
-        self.driver.set_page_load_timeout(60)
+        self.driver.set_page_load_timeout(PAGE_TIMEOUT)
         # other configurations
 
     def driver_close(self):
+        """close a selenium web browser"""
         self.driver.close()
 
     def tor_start(self):
+        """star a tor process with the specified PT"""
         if self.pt == 'fte':
             config = FteTorrc()
         if self.pt == "obfs3":
@@ -254,15 +282,21 @@ class TorTraceCollector(object):
         if self.pt == "obfs4":
             config = Obfs4Torrc()
 
+        # the default tor connection timeout is 60
         self.tor_process = stem.process.launch_tor_with_config(
             config = config,
             init_msg_handler = print_bootstrap_lines,
-            timeout = 60)
+            timeout = TOR_TIMEOUT)
 
     def tor_end(self):
+        """kill the tor process"""
         self.tor_process.kill()
 
     def dump_start(self, filename):
+        """
+        start tcpdump (windump)
+        :param str filename: the name of the output pcap file
+        """
         if IS_WINDOWS:
             cmd = "windump -s 0 -w %s not udp port 1900" % (filename)
             self.dump_process = subprocess.Popen(cmd.split(), shell=False)
@@ -271,12 +305,13 @@ class TorTraceCollector(object):
             self.dump_process = subprocess.Popen(cmd, shell=True,  preexec_fn=os.setsid)
 
     def dump_end(self):
+        """kill tcpdump (windump)"""
         if IS_WINDOWS:
             self.dump_process.kill()
             os.kill(self.dump_process.pid, signal.SIGTERM)
         else:
             os.killpg(self.dump_process.pid, signal.SIGINT)
-            cmd = "echo '%s' | sudo killall -9 tcpdump" % USER_PASSWORD
+            cmd = "echo '%s' | sudo kill_all -9 tcpdump" % USER_PASSWORD
             self.dump_process = subprocess.Popen(cmd, shell=True,  preexec_fn=os.setsid)
 
     def pt_clean(self, key):
@@ -318,7 +353,7 @@ class TorTraceCollector(object):
         self.tor_end()
         time.sleep(random_sec())
         # self.dump_end()
-        killtor()
+        kill_tor()
 
         
 def get_finished(pt):
@@ -344,7 +379,7 @@ def run_with(domain_list, pt, start, end, round_no):
         if no not in urls:
             continue
 
-        killall()
+        kill_all()
         clear_dns_cache()
 
         tc = TorTraceCollector(pt, round_no)
@@ -360,14 +395,14 @@ def run_with(domain_list, pt, start, end, round_no):
             f.close()
 
         if IS_WINDOWS:
-            killtor()
+            kill_tor()
             tc.driver_close()
         else:
             try:
                 tc.tor_end()
             except:
                 pass
-            killtor()
+            kill_tor()
             tc.driver_close()
             os.popen("echo '%s' | sudo rm -rf /tmp/tmp*" % USER_PASSWORD)
         time.sleep(1)
