@@ -3,7 +3,7 @@ SAMPLESIZE = 9
 TRAINSZIE = 2
 VALIDSIZE = 3
 TESTSIZE = SAMPLESIZE - TRAINSZIE - VALIDSIZE
-
+IS_CAMPUS = True
 
 PCAP_ROOT_DIR = "./pcap_test"
 TRACE_ROOT_DIR = "./trace_test"
@@ -14,6 +14,8 @@ DOMAIN_LIST = "top-1m.csv"
 SIP = "10.0.2.15"
 
 TBB_DIR = "./"
+TOR_TIMEOUT = 60
+PAGE_TIMEOUT = 60
 
 USER_PASSWORD = "123456"
 
@@ -28,8 +30,4 @@ FLAG_ACK = 16
 FLAG_PUSH_ACK = 24
 MISSING_ITEM = -1
 
-def entropy(s):
-    p, lns = Counter(s), float(len(s))
-    lns = float(256)
-    return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
 

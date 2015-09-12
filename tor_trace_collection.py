@@ -25,8 +25,7 @@ IS_WINDOWS = platform.system().lower().startswith('windows')
 os.environ['LD_LIBRARY_PATH'] =  os.path.join(TBB_DIR, "TorBrowser", "Tor")
 TOR_DATA_DIRECTORY = os.path.join(TBB_DIR, 'TorBrowser', 'Data', 'Tor')
 TOR_PLUG_DIR = os.path.join(TBB_DIR, 'TorBrowser', 'Tor', 'PluggableTransports')
-TOR_TIMEOUT = 60
-PAGE_TIMEOUT = 60
+
 
 class BasicTorrc(dict):
     """
