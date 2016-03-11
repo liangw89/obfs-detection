@@ -365,7 +365,7 @@ def get_finished(pt):
     nos = [int(v.split("_")[0]) for v in nos]
     return nos
 
-def run_with(domain_list, pt, start, end, round_no):
+def run_with(pt, domain_list, start, end, round_no):
     turls = open(domain_list).readlines()
     urls = {}
 
