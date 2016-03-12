@@ -23,8 +23,9 @@ from conf import *
 
 IS_WINDOWS = platform.system().lower().startswith('windows')
 os.environ['LD_LIBRARY_PATH'] =  os.path.join(TBB_DIR, "TorBrowser", "Tor")
-TOR_DATA_DIRECTORY = os.path.join(TBB_DIR, 'TorBrowser', 'Data', 'Tor')
+TOR_DATA_DIR = os.path.join(TBB_DIR, 'TorBrowser', 'Data', 'Tor')
 TOR_PLUG_DIR = os.path.join(TBB_DIR, 'TorBrowser', 'Tor', 'PluggableTransports')
+TOR_PROFILE_DIR = os.path.join(TBB_DIR, 'TorBrowser', 'Data', 'Browser')
 
 
 class BasicTorrc(dict):
@@ -39,10 +40,10 @@ class BasicTorrc(dict):
         self['CookieAuthentication'] = '1'
         self['SocksTimeout'] = '60'
         self['CircuitBuildTimeout'] = '60'
-        self['DataDirectory'] = TOR_DATA_DIRECTORY
+        self['DataDirectory'] = TOR_DATA_DIR
         self['DirReqStatistics'] = '0'
-        self['GeoIPFile'] = os.path.join(TOR_DATA_DIRECTORY, 'Tor', 'geoip')
-        self['GeoIPv6File'] = os.path.join(TOR_DATA_DIRECTORY, 'Tor', 'geoip6')
+        self['GeoIPFile'] = os.path.join(TOR_DATA_DIR, 'Tor', 'geoip')
+        self['GeoIPv6File'] = os.path.join(TOR_DATA_DIR, 'Tor', 'geoip6')
         #: set it to 1 only you can not connect tor at first
         self['UseBridges'] = '1'
 
@@ -207,16 +208,18 @@ class TorTraceCollector(object):
         self.IS_NORM = False
         if self.pt == "norm":
             self.IS_NORM = True
-        self.round_no = round_no
+        self.round_no = str(round_no)
         self.home_path = os.getcwd()
         self.trace_dir = os.path.join(TRACE_ROOT_DIR, self.round_no)
+        
         if not os.path.exists(self.trace_dir):
             os.mkdir(self.trace_dir)
+
         self.trace_dir = os.path.join(self.trace_dir, self.pt)
         if not os.path.exists(self.trace_dir):
             os.mkdir(self.trace_dir)
 
-        self.profile_dir = os.path.join(self.home_path, "profile.default")
+        self.profile_dir = os.path.join(TOR_PROFILE_DIR, "profile.default")
         self.profile = self.get_profile()
         self.driver = None
         self.tor_process = None
@@ -355,8 +358,15 @@ class TorTraceCollector(object):
         kill_tor()
 
         
-def get_finished(pt):
-    trace_dir = os.path.join(TRACE_ROOT_DIR, pt)
+def get_finished(pt, round_no):
+    if not os.path.exists(TRACE_ROOT_DIR):
+        os.mkdir(TRACE_ROOT_DIR)
+    trace_dir = os.path.join(TRACE_ROOT_DIR, str(round_no))
+    if not os.path.exists(trace_dir):
+        if IS_WINDOWS:
+            raise Exception("You mush create directories %s on Windows" % trace_dir)
+        os.mkdir(trace_dir)
+    trace_dir = os.path.join(trace_dir, pt)
     if not os.path.exists(trace_dir):
         if IS_WINDOWS:
             raise Exception("You mush create directories %s on Windows" % trace_dir)
@@ -371,7 +381,7 @@ def run_with(pt, domain_list, start, end, round_no):
 
     for v in turls:
         urls[int(v.strip("\n").split(",")[0])] = v.strip("\n").split(",")[1] 
-    for tno in get_finished(pt):
+    for tno in get_finished(pt, round_no):
         urls.pop(tno)
 
     for no in range(start, end):
@@ -406,9 +416,9 @@ def run_with(pt, domain_list, start, end, round_no):
             os.popen("echo '%s' | sudo rm -rf /tmp/tmp*" % USER_PASSWORD)
         time.sleep(1)
         try:
-        	tc.dump_end()
+            tc.dump_end()
         except:
-        	pass
+            pass
 
 def test():
     for pt in ["norm", "obfs3", "obfs4", "fte", "meek-google", "meek-amazon"]:
