@@ -26,6 +26,7 @@ The unique IDs should be numeric values.
 obfsproxy4, change the output to obfs4proxy.bin (or obfs4proxy4.exe) and 
 put it in the "path/tor-browser_en-US/Browser/TorBrowser/Tor/PluggableTransports/"
 4. Put tor_trace_collection.py and conf.py in the "path/tor-browser_en-US/Browser", and configure the conf.py. 
-5. Run "python tor_trace_collection.py -h" to see how to use it. 
-6. The pcaps for a given type of PT will be stored at "PCAP_ROOT_DIRECTORY/ROUND_NUMBER/PT_NAME/"
+5. Disable the TorLauncher extension in the TBB.
+6. Run "python tor_trace_collection.py -h" to see how to use it. 
+7. The pcaps for a given type of PT will be stored at "PCAP_ROOT_DIRECTORY/ROUND_NUMBER/PT_NAME/"
 
